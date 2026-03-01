@@ -50,13 +50,13 @@ stt:
   compute_type: "int8_float16"     # int8_float16 = smallest VRAM for medium model
   beam_size: 3                     # beam search for better accuracy
   language: "en"
-  vad_filter: true
+  vad_filter: false               # disabled: WebRTC VAD pre-filters; faster-whisper 1.1.0 vad_filter corrupts token prompts
   model_dir: "models/stt/"
   initial_prompt: null
   condition_on_previous_text: false
   chunk_duration_sec: 0.5
   partial_result_interval_ms: 300
-  word_timestamps: true            # enable per-word timestamps for better accuracy
+  word_timestamps: false           # disabled: faster-whisper 1.1.0 token bug with word_timestamps=True
   hotwords: []                     # domain-specific words appended to initial_prompt
 
 llm:

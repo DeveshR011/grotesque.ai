@@ -145,6 +145,7 @@ class LLMEngine:
         self._model = None
         self._running = threading.Event()
         self._thread: threading.Thread | None = None
+        self._heartbeat = None       # injected via set_heartbeat()
 
         # Conversation history for multi-turn (within context window)
         self._history: list[dict[str, str]] = []
@@ -199,6 +200,10 @@ class LLMEngine:
             self._thread = None
         logger.info("LLM thread stopped")
 
+    def set_heartbeat(self, monitor) -> None:
+        """Inject supervisor heartbeat monitor."""
+        self._heartbeat = monitor
+
     @property
     def is_alive(self) -> bool:
         return self._thread is not None and self._thread.is_alive()
@@ -208,15 +213,26 @@ class LLMEngine:
     # ------------------------------------------------------------------
 
     def _run(self) -> None:
+        _last_heartbeat = time.monotonic()
         try:
             while self._running.is_set():
                 req = self._req_q.get(timeout=0.2)
+
+                # Periodic idle heartbeat so supervisor knows we're alive
+                _now = time.monotonic()
+                if self._heartbeat and (_now - _last_heartbeat) >= 5.0:
+                    self._heartbeat.beat("LLM")
+                    _last_heartbeat = _now
+
                 if req is None:
                     continue
                 if not isinstance(req, LLMRequest):
                     continue
 
                 self._generate_streaming(req)
+                if self._heartbeat:
+                    self._heartbeat.beat("LLM")
+                    _last_heartbeat = time.monotonic()
         except Exception:
             logger.exception("LLM thread crashed")
             self._running.clear()

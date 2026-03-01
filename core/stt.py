@@ -103,22 +103,31 @@ class SpeechToText:
 
     def load_model(self) -> None:
         """Pre-load model into GPU VRAM. Call once at startup."""
+        import os
         from faster_whisper import WhisperModel
 
-        logger.info(
-            "Loading Faster-Whisper model '%s' on %s (%s)…",
-            self._model_size,
-            self._device,
-            self._compute_type,
-        )
+        # Prefer a pre-downloaded flat directory (no HF Hub symlinks needed on Windows).
+        # Looks for  <model_dir>/faster-whisper-<model_size>/vocabulary.txt.
+        flat_dir = os.path.join(self._model_dir, f"faster-whisper-{self._model_size}")
+        if os.path.isfile(os.path.join(flat_dir, "vocabulary.txt")) and \
+                os.path.getsize(os.path.join(flat_dir, "vocabulary.txt")) > 0:
+            model_id_or_path = flat_dir
+            kwargs = {"device": self._device, "compute_type": self._compute_type, "cpu_threads": 4}
+            logger.info("Loading Faster-Whisper from local path '%s' on %s (%s)…",
+                        flat_dir, self._device, self._compute_type)
+        else:
+            model_id_or_path = self._model_size
+            kwargs = {
+                "device": self._device,
+                "compute_type": self._compute_type,
+                "download_root": self._model_dir,
+                "cpu_threads": 4,
+            }
+            logger.info("Loading Faster-Whisper model '%s' on %s (%s)…",
+                        self._model_size, self._device, self._compute_type)
+
         t0 = time.monotonic()
-        self._model = WhisperModel(
-            self._model_size,
-            device=self._device,
-            compute_type=self._compute_type,
-            download_root=self._model_dir,
-            cpu_threads=4,
-        )
+        self._model = WhisperModel(model_id_or_path, **kwargs)
         elapsed = time.monotonic() - t0
         logger.info("Faster-Whisper loaded in %.1f s", elapsed)
 
@@ -186,18 +195,29 @@ class SpeechToText:
 
         t0 = time.monotonic()
 
-        segments, info = self._model.transcribe(
-            audio_f32,
-            beam_size=self._beam_size,
-            language=self._language,
-            vad_filter=self._vad_filter,
-            condition_on_previous_text=self._condition_on_previous,
-            initial_prompt=self._initial_prompt,
-            word_timestamps=self._word_timestamps,
-        )
+        try:
+            # NOTE: vad_filter is always False here — audio has already been
+            # pre-filtered by the WebRTC VAD in the pipeline.  faster-whisper
+            # 1.1.0's internal VAD re-segments audio and rebuilds the decode
+            # prompt in a way that drops the <|startoftranscript|> special
+            # token, raising ValueError on every utterance.  word_timestamps
+            # is also disabled for the same reason (same code path in 1.1.0).
+            segments, info = self._model.transcribe(
+                audio_f32,
+                beam_size=self._beam_size,
+                language=self._language,
+                vad_filter=False,
+                word_timestamps=False,
+                condition_on_previous_text=self._condition_on_previous,
+                initial_prompt=self._initial_prompt,
+            )
+            _segments_list: list = list(segments)
+        except Exception as exc:
+            logger.error("Transcription failed (%.2fs audio): %s", duration_sec, exc)
+            return
 
         full_text_parts: list[str] = []
-        for seg in segments:
+        for seg in _segments_list:
             text = seg.text.strip()
             if text:
                 # Push partial results for streaming feel

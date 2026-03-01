@@ -565,13 +565,14 @@ class Pipeline:
 
         # Loopback supervisor registration (only if actually running)
         if self._loopback_running:
-            self._supervisor.register_component("LoopbackCapture", self._loopback_capture.start, heartbeat_timeout=15.0)
-            self._supervisor.register_component("LoopbackVAD", self._loopback_vad.start, heartbeat_timeout=15.0)
+            self._supervisor.register_component("LoopbackCapture", self._loopback_capture.start, heartbeat_timeout=60.0)
+            self._supervisor.register_component("LoopbackVAD", self._loopback_vad.start, heartbeat_timeout=60.0)
 
         # Inject heartbeat monitor into components so they can send beats
         self._audio_capture.set_heartbeat(self._supervisor.heartbeat)
         self._vad.set_heartbeat(self._supervisor.heartbeat)
         self._stt.set_heartbeat(self._supervisor.heartbeat)
+        self._llm.set_heartbeat(self._supervisor.heartbeat)
         self._playback.set_heartbeat(self._supervisor.heartbeat)
 
         # Loopback heartbeat injection

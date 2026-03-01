@@ -200,12 +200,18 @@ class AudioLoopback:
                 device_idx, device_sr, device_ch, device_frame_size,
             )
 
+            _last_heartbeat_time = time.monotonic()
+
             while self._running.is_set():
                 try:
                     raw = stream.read(device_frame_size, exception_on_overflow=False)
                 except Exception:
                     logger.debug("Loopback read error", exc_info=True)
                     time.sleep(0.01)
+                    # Still send heartbeat on errors so supervisor stays satisfied
+                    if self._heartbeat and (time.monotonic() - _last_heartbeat_time) >= 1.0:
+                        self._heartbeat.beat("LoopbackCapture")
+                        _last_heartbeat_time = time.monotonic()
                     continue
 
                 samples = np.frombuffer(raw, dtype=np.int16)
@@ -221,11 +227,11 @@ class AudioLoopback:
 
                 self._ring.write(samples)
 
-                # Heartbeat every ~50 frames (~1 s at 20 ms)
-                self._beat_counter += 1
-                if self._beat_counter >= 50 and self._heartbeat:
+                # Time-based heartbeat every ~1 s (decoupled from frame count)
+                _now = time.monotonic()
+                if self._heartbeat and (_now - _last_heartbeat_time) >= 1.0:
                     self._heartbeat.beat("LoopbackCapture")
-                    self._beat_counter = 0
+                    _last_heartbeat_time = _now
 
         except Exception:
             logger.exception("LoopbackCapture thread crashed")
