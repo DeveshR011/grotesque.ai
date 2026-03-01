@@ -1,0 +1,3 @@
+"""
+Grotesque AI – Service Package
+"""

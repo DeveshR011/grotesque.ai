@@ -1,67 +1,113 @@
-annotated-doc==0.0.4
-anyio==4.12.1
-av==16.1.0
-certifi==2026.2.25
-cffi==2.0.0
-charset-normalizer==3.4.4
-click==8.3.1
-colorama==0.4.6
-cryptography==46.0.5
-ctranslate2==4.7.1
-diskcache==5.6.3
-faster-whisper==1.1.0
-filelock==3.24.3
-flatbuffers==25.12.19
-fsspec==2026.2.0
-GPUtil==1.4.0
-h11==0.16.0
-hf-xet==1.3.2
-httpcore==1.0.9
-httpx==0.28.1
-huggingface_hub==1.5.0
-idna==3.11
-Jinja2==3.1.6
-joblib==1.5.3
-llama_cpp_python==0.3.4
-llvmlite==0.46.0
-markdown-it-py==4.0.0
+# ──────────────────────────────────────────────
+# Grotesque AI — Python Dependencies
+# Python 3.10 – 3.12 | Windows 10/11
+# ──────────────────────────────────────────────
+
+# ── LLM Inference ────────────────────────────
+llama_cpp_python==0.3.4           # llama.cpp Python bindings (local LLM)
+Jinja2==3.1.6                     # prompt templating
 MarkupSafe==3.0.3
-mdurl==0.1.2
-mpmath==1.3.0
-numba==0.64.0
+tokenizers==0.22.2
+
+# ── Speech-to-Text (Faster-Whisper) ──────────
+faster-whisper==1.1.0
+ctranslate2==4.7.1
+huggingface_hub==1.5.0
+fsspec==2026.2.0
+filelock==3.24.3
+hf-xet==1.3.2
+
+# ── Wake-Word Detection ───────────────────────
+openwakeword==0.6.0               # OpenWakeWord (ONNX backend)
+pvporcupine==3.0.2                # Picovoice Porcupine (fallback)
+
+# ── Voice Activity Detection ──────────────────
+webrtcvad-wheels==2.0.14          # WebRTC VAD (pre-built wheels)
+
+# ── Text-to-Speech (Piper) ────────────────────
+piper-tts==1.4.1
+onnxruntime==1.24.2               # ONNX runtime (Piper + OpenWakeWord)
+
+# ── Audio I/O ─────────────────────────────────
+PyAudio==0.2.14                   # microphone / speaker access
+PyAudioWPatch==0.2.12.8           # WASAPI loopback (system audio)
+sounddevice==0.5.1                # secondary audio device interface
+av==16.1.0                        # audio/video container decoding
+resampy==0.4.3                    # high-quality audio resampling
+
+# ── Numerical / Signal Processing ────────────
 numpy==1.26.4
+scipy==1.17.1
+numba==0.64.0
+llvmlite==0.46.0
+scikit-learn==1.8.0               # ML utilities (openwakeword features)
+joblib==1.5.3
+threadpoolctl==3.6.0
+sympy==1.14.0
+mpmath==1.3.0
+
+# ── Deep Learning Support ─────────────────────
+flatbuffers==25.12.19
+protobuf==7.34.0
+
+# ── GUI / System Tray ─────────────────────────
+pystray==0.19.5                   # system-tray icon
+pillow==12.1.1                    # icon rendering for pystray
+
+# ── Windows Integration ───────────────────────
+pywin32==308                      # Windows service, COM, registry
+WMI==1.5.1                        # Windows Management Instrumentation
+psutil==7.2.2                     # process & resource monitoring
+GPUtil==1.4.0                     # GPU utilisation queries
+
+# ── Memory / Caching ─────────────────────────
+diskcache==5.6.3                  # persistent conversation memory
+
+# ── Security / Cryptography ───────────────────
+cryptography==46.0.5              # AES-256 config encryption (PyCA)
+cffi==2.0.0
+pycparser==3.0
+
+# ── Config & Environment ──────────────────────
+PyYAML==6.0.3                     # config.yaml parsing
+python-dotenv==1.0.1              # .env support for secrets / API keys
+
+# ── Scheduling (Timers / Alarms plugin) ───────
+schedule==1.2.2                   # lightweight task scheduler
+
+# ── Plugin Hot-Reload ─────────────────────────
+watchdog==4.0.2                   # file-system event watcher for live plugin reload
+
+# ── CLI / Terminal UI ─────────────────────────
+rich==14.3.3                      # coloured terminal output
+click==8.3.1
+typer==0.24.1
+shellingham==1.5.4
+colorama==0.4.6
+Pygments==2.19.2
+markdown-it-py==4.0.0
+mdurl==0.1.2
+
+# ── HTTP / Networking ─────────────────────────
+httpx==0.28.1
+httpcore==1.0.9
+anyio==4.12.1
+h11==0.16.0
+requests==2.32.5
+certifi==2026.2.25
+charset-normalizer==3.4.4
+idna==3.11
+urllib3==2.6.3
+
+# ── Misc / Packaging ─────────────────────────
+packaging==26.0
+setuptools==82.0.0
+tqdm==4.67.3
+typing_extensions==4.15.0
+six==1.17.0
+annotated-types==0.7.0
+
+# ── CUDA Support (optional — GPU inference) ───
+# Uncomment if running with an NVIDIA GPU:
 nvidia-cublas-cu12==12.9.1.4
 nvidia-cuda-runtime-cu12==12.9.79
-onnxruntime==1.24.2
-openwakeword==0.6.0
-packaging==26.0
-pillow==12.1.1
-piper-tts==1.4.1
-protobuf==7.34.0
-psutil==7.2.2
-pvporcupine==3.0.2
-PyAudio==0.2.14
-PyAudioWPatch==0.2.12.8
-pycparser==3.0
-Pygments==2.19.2
-pystray==0.19.5
-pywin32==308
-PyYAML==6.0.3
-requests==2.32.5
-resampy==0.4.3
-rich==14.3.3
-scikit-learn==1.8.0
-scipy==1.17.1
-setuptools==82.0.0
-shellingham==1.5.4
-six==1.17.0
-sounddevice==0.5.1
-sympy==1.14.0
-threadpoolctl==3.6.0
-tokenizers==0.22.2
-tqdm==4.67.3
-typer==0.24.1
-typing_extensions==4.15.0
-urllib3==2.6.3
-webrtcvad-wheels==2.0.14
-WMI==1.5.1

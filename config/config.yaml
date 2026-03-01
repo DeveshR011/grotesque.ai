@@ -1,0 +1,167 @@
+# Grotesque AI – Configuration (v2)
+# All paths relative to project root unless absolute.
+# ============================================================
+
+runtime:
+  device: "cuda"                    # cuda | cpu
+  gpu_device_id: 0
+  log_level: "WARNING"             # DEBUG | INFO | WARNING | ERROR
+  log_to_file: false               # never persist conversation data
+  thread_priority: "high"          # high | normal
+  watchdog_interval_sec: 5
+  graceful_shutdown_timeout_sec: 10
+
+audio:
+  sample_rate: 16000
+  channels: 1
+  frame_duration_ms: 20            # 20ms frames for WebRTC VAD
+  dtype: "int16"
+  ring_buffer_sec: 30              # 30s rolling buffer
+  device_index: null               # null = system default mic
+  playback_device_index: null      # null = system default speaker
+  playback_sample_rate: 22050
+  playback_channels: 1
+  loopback_enabled: true            # capture speaker output (WASAPI)
+  loopback_device_index: null       # null = auto-detect WASAPI loopback
+  loopback_ring_buffer_sec: 10      # 10s rolling buffer for speaker audio
+
+vad:
+  aggressiveness: 3                # 0-3, 3 = most aggressive filtering
+  speech_pad_ms: 300               # padding around detected speech
+  min_speech_ms: 250               # ignore speech shorter than this
+  silence_limit_ms: 1200           # end-of-utterance silence threshold
+  loopback_aggressiveness: 2       # VAD mode for speaker capture (lower = less aggressive)
+
+wake_word:
+  engine: "openwakeword"           # openwakeword | porcupine
+  mode: "always_on"                # always_on | wake_word | push_to_talk
+  follow_up_sec: 30                # seconds to stay in follow-up mode after assistant speaks
+  push_to_talk_hotkey: "ctrl+space" # hotkey for push-to-talk mode
+  model_path: "models/wake/"
+  keyword: "hey_jarvis"
+  threshold: 0.5
+  timeout_sec: 15.0                # seconds of active listening after wake
+  porcupine_model_path: null
+  porcupine_keyword_path: null
+
+stt:
+  model_size: "medium"             # tiny | base | small | medium (medium ≈ 1.5 GB VRAM)
+  device: "cuda"
+  compute_type: "int8_float16"     # int8_float16 = smallest VRAM for medium model
+  beam_size: 3                     # beam search for better accuracy
+  language: "en"
+  vad_filter: true
+  model_dir: "models/stt/"
+  initial_prompt: null
+  condition_on_previous_text: false
+  chunk_duration_sec: 0.5
+  partial_result_interval_ms: 300
+  word_timestamps: true            # enable per-word timestamps for better accuracy
+  hotwords: []                     # domain-specific words appended to initial_prompt
+
+llm:
+  model_path: "models/llm/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf"
+  n_gpu_layers: 33                 # offload all 33 layers to GPU
+  n_ctx: 1024                      # reduced context window for faster inference
+  n_batch: 512                     # prompt eval batch size
+  n_threads: 8                     # CPU threads for any CPU layers
+  use_mmap: true
+  use_mlock: true                  # pin model in RAM
+  seed: -1
+  max_tokens: 150                  # shorter responses = lower latency
+  temperature: 0.5                 # less random = faster convergence
+  top_p: 0.9
+  top_k: 40
+  repeat_penalty: 1.1
+  stop_tokens: ["<|eot_id|>", "<|end_of_text|>"]
+  flash_attn: true                 # use flash attention if available
+  system_prompt: |
+    You are Grotesque, a helpful voice assistant running locally.
+    You hear both the user's microphone and everything playing through the PC speakers.
+    Transcriptions labelled [SPEAKER] are things the PC is currently playing (music, videos, calls).
+    Transcriptions labelled [MIC] are direct speech from the user.
+    When the user says things like "what is this song?" or "who said that?", use the recent [SPEAKER] context to answer.
+    Keep responses concise and conversational (1-3 sentences unless detail is requested).
+    Never mention being an AI unless directly asked.
+
+tts:
+  model_path: "models/tts/en_US-amy-medium.onnx"
+  config_path: "models/tts/en_US-amy-medium.onnx.json"
+  speaker_id: 0
+  length_scale: 0.85               # slightly faster speaking for natural pace
+  noise_scale: 0.667
+  noise_w: 0.8
+  sentence_silence_sec: 0.2
+  leading_silence_sec: 0.05        # 50ms silence before first audio chunk
+  use_cuda: false                  # Piper on CPU is fast enough
+
+# ============================================================
+# Phase 2: Intent Router & Plugin System
+# ============================================================
+
+intent_router:
+  enabled: true                    # Enable structured JSON output + routing
+  fallback_intent: "conversation"  # Default if JSON parsing fails
+
+plugins:
+  enabled: true
+  builtin_dir: "core/plugins/builtin"
+  sandbox_timeout_sec: 10          # Max execution time per plugin call
+  allowed_permissions:             # Global permission whitelist
+    - "READ_SYSTEM_INFO"
+    - "MEDIA_CONTROL"
+    - "TIMER"
+    - "REMINDER"
+    - "SETTINGS"
+  # Uncomment for advanced plugins (use with caution):
+  # - "FILE_READ"
+  # - "CLIPBOARD_READ"
+  # - "PROCESS_LAUNCH"
+
+# ============================================================
+# Phase 2: Memory System
+# ============================================================
+
+memory:
+  short_term_size: 100             # Max entries in RAM conversation buffer
+  enable_vector: false             # Enable FAISS vector database (Phase 2)
+  vector_index_path: "data/memory.idx"
+  embedding_model: "all-MiniLM-L6-v2"
+  embedding_dim: 384
+  max_vector_entries: 10000
+  encrypt_vector_store: true       # AES-256 encrypt persisted vectors
+
+# ============================================================
+# Phase 2: Supervisor & Monitoring
+# ============================================================
+
+supervisor:
+  enabled: true
+  check_interval_sec: 10           # Health check frequency
+  heartbeat_timeout_sec: 15.0      # Per-component heartbeat timeout
+  max_restarts: 10                 # Max auto-restarts before fatal
+  gpu_max_vram_mb: 7000            # VRAM ceiling alarm (LLaMA-3 8B Q4 uses ~5.8 GB)
+  gpu_max_temperature: 90          # GPU temp alarm (°C)
+  memory_leak_threshold_mb: 100    # RSS growth threshold for leak alert
+
+# ============================================================
+# Security (enhanced)
+# ============================================================
+
+security:
+  block_outbound: true             # add firewall rule on startup
+  prevent_socket_binding: true     # block all socket.bind() calls
+  disable_crash_dumps: true        # disable Windows crash dumps / WER
+  encrypt_config: false            # set true for production
+  encrypt_logs: false              # AES-256 encrypted error logs
+  clear_buffers_on_idle: true      # zero-fill audio buffers
+  idle_clear_timeout_sec: 300      # 5 min idle before wiping buffers
+  firewall_rule_name: "GrotesqueAI_Block"
+
+# ============================================================
+# GUI / Monitor Window
+# ============================================================
+gui:
+  show_monitor: true         # show text monitor window on startup
+  audio_output: true         # set false = text-only, no TTS/speaker
+  monitor_always_on_top: true
