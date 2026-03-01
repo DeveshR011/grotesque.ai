@@ -1,0 +1,7 @@
+# Model files are downloaded here by scripts/download_models.py
+# Expected structure:
+#   models/llm/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf
+#   models/stt/  (faster-whisper auto-downloads here)
+#   models/tts/en_US-amy-medium.onnx
+#   models/tts/en_US-amy-medium.onnx.json
+#   models/wake/hey_grotesque.onnx  (or porcupine .ppn)
