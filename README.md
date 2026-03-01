@@ -1,6 +1,6 @@
 # Grotesque AI
 
-> A fully **offline**, privacy-first voice assistant for Windows — powered by local LLMs, Whisper STT, Piper TTS, and a hot-pluggable intent-router plugin system.
+> A fully **offline**, privacy-first voice assistant for Windows, powered by local LLMs, Whisper STT, Piper TTS, and a hot-pluggable intent-router plugin system.
 
 ---
 
