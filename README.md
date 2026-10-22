@@ -356,7 +356,7 @@ class MyPlugin(BasePlugin):
         return "Done! I did the thing."
 ```
 
-The plugin engine auto-discovers and hot-reloads plugins — no restart needed.
+The plugin engine auto-discovers and hot-reloads plugins no restart needed.
 
 ---
 
