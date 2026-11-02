@@ -429,7 +429,6 @@ grotesque-ai/
 Run `python scripts/download_models.py` to fetch all models automatically from HuggingFace Hub.
 
 ---
-
 ## Security
 
 - All config files can be AES-256 encrypted at rest via `security.py`
